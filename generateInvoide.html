@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Table with JSON Features</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2>Form</h2>
+        <div class="mb-3">
+            <label for="date" class="form-label">Date</label>
+            <input type="date" class="form-control" id="date">
+        </div>
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" class="form-control" id="name">
+        </div>
+        <div class="mb-3">
+            <label for="srno" class="form-label">Sr No</label>
+            <input type="text" class="form-control" id="srno">
+        </div>
+        <h4>Table</h4>
+        <div class="row mb-3">
+            <div class="col">
+                <input type="text" id="description" class="form-control" placeholder="Description">
+            </div>
+            <div class="col">
+                <input type="text" id="weight" class="form-control" placeholder="Weight" oninput="suggestAmount()">
+            </div>
+            <div class="col">
+                <input type="text" id="rate" class="form-control" placeholder="Rate" oninput="suggestAmount()">
+            </div>
+            <div class="col">
+                <input type="text" id="amount" class="form-control" placeholder="Amount">
+            </div>
+            <div class="col">
+                <button class="btn btn-primary" onclick="addRow()">Add</button>
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Description</th>
+                    <th>Weight</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        <div class="mb-3">
+            <textarea id="jsonInput" class="form-control" placeholder="Paste JSON data here..."></textarea>
+        </div>
+        <h4>Total and Amount Received</h4>
+        <div class="row mb-3">
+            <div class="col">
+                <label for="totalAmount" class="form-label">Total Amount</label>
+                <input type="text" id="totalAmount" class="form-control" placeholder="Total Amount">
+            </div>
+            <div class="col">
+                <label for="receivedAmount" class="form-label">Amount Received</label>
+                <input type="text" id="receivedAmount" class="form-control" placeholder="Amount Received">
+            </div>
+        </div>
+        <button class="btn btn-success" onclick="saveData()">Generate Invoice</button>
+        <button class="btn btn-info" onclick="loadData()">Load Data from JSON</button>
+        <button class="btn btn-secondary" onclick="copyToClipboard()">Copy JSON Data</button>
+    </div>
+
+    <script>
+        function suggestAmount() {
+            let weight = document.getElementById("weight").value;
+            let rate = document.getElementById("rate").value;
+            let amountField = document.getElementById("amount");
+
+            if (!isNaN(weight) && !isNaN(rate) && weight && rate) {
+                amountField.placeholder = (weight * rate).toFixed(0);
+            } else {
+                amountField.placeholder = "";
+            }
+        }
+
+        function addRow() {
+            let description = document.getElementById("description").value;
+            description = description.trim();
+            description = description.charAt(0).toUpperCase() + description.slice(1);
+
+            let weight = document.getElementById("weight").value;
+            let rate = document.getElementById("rate").value;
+            let amount = document.getElementById("amount").value;
+
+            if (!amount) {
+                if (!isNaN(weight) && !isNaN(rate) && weight && rate) {
+                    amount = (weight * rate).toFixed(0);
+                } else {
+                    alert("Invalid weight or rate.");
+                    return;
+                }
+            }
+
+            let table = document.getElementById("tableBody");
+            let row = table.insertRow();
+            row.innerHTML = `
+                <td>${description}</td>
+                <td>${weight}</td>
+                <td>${rate}</td>
+                <td>${amount}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick="editRow(this)">Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteRow(this)">Delete</button>
+                </td>
+            `;
+            clearFields();
+            updateTotalAmount();
+        }
+
+        function clearFields() {
+            document.getElementById("description").value = "";
+            document.getElementById("weight").value = "";
+            document.getElementById("rate").value = "";
+            document.getElementById("amount").value = "";
+            document.getElementById("amount").placeholder = "";
+        }
+
+        function editRow(button) {
+            let row = button.parentNode.parentNode;
+            document.getElementById("description").value = row.cells[0].innerHTML;
+            document.getElementById("weight").value = row.cells[1].innerHTML;
+            document.getElementById("rate").value = row.cells[2].innerHTML;
+            document.getElementById("amount").value = row.cells[3].innerHTML;
+            row.remove();
+            updateTotalAmount();
+        }
+
+        function deleteRow(button) {
+            button.parentNode.parentNode.remove();
+            updateTotalAmount();
+        }
+
+        function updateTotalAmount() {
+            let rows = document.getElementById("tableBody").rows;
+            let total = 0;
+            for (let i = 0; i < rows.length; i++) {
+                total += parseFloat(rows[i].cells[3].innerHTML);
+            }
+            document.getElementById("totalAmount").value = total.toFixed(0);
+        }
+
+        function saveData() {
+            let rows = document.getElementById("tableBody").rows;
+            let tableData = [];
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i].cells;
+                tableData.push({
+                    description: row[0].innerHTML,
+                    weight: row[1].innerHTML,
+                    rate: row[2].innerHTML,
+                    amount: row[3].innerHTML
+                });
+            }
+
+            let formData = {
+                srno: document.getElementById("srno").value,
+                date: document.getElementById("date").value,
+                name: document.getElementById("name").value,
+                totalAmount: document.getElementById("totalAmount").value,
+                receivedAmount: document.getElementById("receivedAmount").value,
+                table: tableData
+            };
+
+            let jsonData = JSON.stringify(formData);
+            localStorage.setItem("formData", jsonData);
+            window.location.href = "invoiceBill.html"; // Redirect to another page
+        }
+
+        function loadData() {
+            let jsonInput = document.getElementById("jsonInput").value;
+            try {
+                let formData = JSON.parse(jsonInput);
+                
+                document.getElementById("srno").value = formData.srno;
+                document.getElementById("date").value = formData.date;
+                document.getElementById("name").value = formData.name;
+                document.getElementById("totalAmount").value = formData.totalAmount;
+                document.getElementById("receivedAmount").value = formData.receivedAmount;
+
+                document.getElementById("tableBody").innerHTML = "";
+                formData.table.forEach(item => {
+                    let table = document.getElementById("tableBody");
+                    let row = table.insertRow();
+                    row.innerHTML = `
+                        <td>${item.description}</td>
+                        <td>${item.weight}</td>
+                        <td>${item.rate}</td>
+                        <td>${item.amount}</td>
+                        <td>
+                            <button class="btn btn-warning btn-sm" onclick="editRow(this)">Edit</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteRow(this)">Delete</button>
+                        </td>
+                    `;
+                });
+                // updateTotalAmount();
+            } catch (error) {
+                alert("Invalid JSON data.");
+            }
+        }
+
+        function copyToClipboard() {
+            let rows = document.getElementById("tableBody").rows;
+            let tableData = [];
+            for (let i = 0; i < rows.length; i++) {
+                let row = rows[i].cells;
+                tableData.push({
+                    description: row[0].innerHTML,
+                    weight: row[1].innerHTML,
+                    rate: row[2].innerHTML,
+                    amount: row[3].innerHTML
+                });
+            }
+
+            let formData = {
+                srno: document.getElementById("srno").value,
+                date: document.getElementById("date").value,
+                name: document.getElementById("name").value,
+                totalAmount: document.getElementById("totalAmount").value,
+                receivedAmount: document.getElementById("receivedAmount").value,
+                table: tableData
+            };
+
+            let jsonData = JSON.stringify(formData);
+            navigator.clipboard.writeText(jsonData).then(() => {
+                alert("Form data copied to clipboard!");
+            }).catch(err => {
+                alert("Failed to copy data.");
+            });
+        }
+    </script>
+</body>
+</html>
