@@ -98,8 +98,11 @@
             let rate = document.getElementById("rate").value;
             let amountField = document.getElementById("amount");
 
-            if (!isNaN(weight) && !isNaN(rate) && weight && rate) {
-                amountField.placeholder = (weight * rate).toFixed(0);
+            let weightValue = parseFloat(weight.match(/\d+(\.\d+)?/));
+            let rateValue = parseFloat(rate);
+
+            if (!isNaN(weightValue) && !isNaN(rateValue)) {
+                amountField.placeholder = (weightValue * rateValue).toFixed(0);
             } else {
                 amountField.placeholder = "";
             }
