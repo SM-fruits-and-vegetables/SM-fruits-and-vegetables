@@ -102,9 +102,10 @@
             let rateValue = parseFloat(rate);
 
             if (!isNaN(weightValue) && !isNaN(rateValue)) {
-                amountField.placeholder = (weightValue * rateValue).toFixed(0);
+                amountField.value = (weightValue * rateValue).toFixed(0);
             } else {
-                amountField.placeholder = "";
+                amountField.placeholder = "Amount";
+                amountField.value = "";
             }
         }
 
